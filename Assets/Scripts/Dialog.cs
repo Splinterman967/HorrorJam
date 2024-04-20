@@ -2,41 +2,71 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using System;
 
 public class Dialog : MonoBehaviour
 {
 
     public TextMeshProUGUI dialogText;
 
+    public GameObject dialogCanvas;
+
     public string[] firstDialog;
     public string[] secondDialog;
     public string[] thirdDialog;
+    public string[] fourthDialog;
+
+    private Queue<Array> dialogs = new Queue<Array>();
+
+    private string[] currentDialog;
 
     public float textSpeed;
-    private int index;  
+    private int sentenceIndex;
 
     void Start()
     {
+        dialogs.Enqueue(firstDialog);
+        dialogs.Enqueue(secondDialog);  
+        dialogs.Enqueue(thirdDialog);
+        dialogs.Enqueue(fourthDialog);
+
+
         dialogText.text = string.Empty;
 
         StartDialoge();
+
+        currentDialog = firstDialog;
     }
 
-    // Update is called once per frame
+
     void Update()
     {
-        if(Input.GetMouseButtonDown(0))
+        //currentDialog = (string[])GetLastItem(dialogs);
+      
+        if (dialogs != null) { currentDialog = (string[])dialogs.Peek(); }
+
+      
+        
+        if (Input.GetMouseButtonDown(0))
         {
-            if(dialogText.text == firstDialog[index])
+            if (dialogText.text == currentDialog[sentenceIndex])
             {
-                NextLine();
+                NextSentence();
             }
 
             else
             {
                 StopAllCoroutines();
-                dialogText.text = firstDialog[index];
-                
+                dialogText.text = currentDialog[sentenceIndex];
+
+            }
+
+            if(dialogText.text == currentDialog[currentDialog.Length-1]) 
+            {
+                dialogs.Dequeue();
+               
+                currentDialog = secondDialog;
+                sentenceIndex = 0;  
             }
         }
     }
@@ -44,26 +74,27 @@ public class Dialog : MonoBehaviour
 
     void StartDialoge()
     {
-        index = 0;
+        sentenceIndex = 0;
         StartCoroutine(TypeLine());
     }
 
     IEnumerator TypeLine()
     {
-        foreach (char c in firstDialog[index].ToCharArray())
+        foreach (char c in currentDialog[sentenceIndex].ToCharArray())
         {
             dialogText.text += c;
             yield return new WaitForSeconds(textSpeed);
         }
     }
 
-    void NextLine()
+    void NextSentence()
     {
-        if(index < firstDialog.Length -1)
+        if (sentenceIndex < currentDialog.Length - 1)
         {
-            index++;
+            dialogCanvas.SetActive(true);
+            sentenceIndex++;
             dialogText.text = string.Empty;
-            StartCoroutine (TypeLine());
+            StartCoroutine(TypeLine());
         }
         else
         {
@@ -73,7 +104,25 @@ public class Dialog : MonoBehaviour
 
     public void ResetDialog()
     {
-        index = 0;
+        sentenceIndex = 0;
+    }
+
+
+    static T GetLastItem<T>(Queue<T> queue)
+    {
+        if (queue.Count == 0)
+        {
+            throw new InvalidOperationException("Queue is empty.");
+        }
+
+        // Peek at the last item without removing it
+        T lastItem = default(T);
+        foreach (T item in queue)
+        {
+            lastItem = item;
+        }
+
+        return lastItem;
     }
 }
 
